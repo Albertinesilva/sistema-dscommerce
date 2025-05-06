@@ -54,6 +54,11 @@ public class ProductService {
     return new ProductDTO(product);
   }
 
+  @Transactional(readOnly = false)
+  public void delete(Long id) {
+    productRepository.deleteById(id);
+  }
+
   private void copyDtoToEntity(ProductDTO dto, Product product) {
     product.setName(dto.getName());
     product.setDescription(dto.getDescription());
