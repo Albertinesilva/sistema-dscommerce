@@ -35,7 +35,11 @@ public class ProductService {
 
   @Transactional(readOnly = false)
   public ProductDTO insert(ProductDTO dto) {
-    Product product = new Product(null, dto.getName(), dto.getDescription(), dto.getPrice(), dto.getImgUrl());
+    Product product = new Product();
+    product.setName(dto.getName());
+    product.setDescription(dto.getDescription());
+    product.setPrice(dto.getPrice());
+    product.setImgUrl(dto.getImgUrl());
     productRepository.save(product);
     return new ProductDTO(product);
 
