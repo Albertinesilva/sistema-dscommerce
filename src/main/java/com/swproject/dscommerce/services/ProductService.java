@@ -1,5 +1,8 @@
 package com.swproject.dscommerce.services;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +15,8 @@ import com.swproject.dscommerce.repositories.ProductRepository;
 
 @Service
 public class ProductService {
+
+  private static final Logger log = LoggerFactory.getLogger(ProductService.class);
 
   @Autowired
   private ProductRepository productRepository;
@@ -26,5 +31,17 @@ public class ProductService {
   public Page<ProductDTO> findAll(Pageable pageable) {
     Page<Product> products = productRepository.findAll(pageable);
     return products.map(x -> new ProductDTO(x));
+  }
+
+  @Transactional(readOnly = false)
+  public ProductDTO insert(ProductDTO dto) {
+    Product product = new Product(null, dto.getName(), dto.getDescription(), dto.getPrice(), dto.getImgUrl());
+    productRepository.save(product);
+    return new ProductDTO(product);
+
+    // Product product = new Product();
+    // BeanUtils.copyProperties(dto, product);
+    // productRepository.save(product);
+    // return new ProductDTO(product);
   }
 }
