@@ -4,15 +4,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.swproject.dscommerce.dto.ProductDTO;
 import com.swproject.dscommerce.entities.Product;
 import com.swproject.dscommerce.repositories.ProductRepository;
+import com.swproject.dscommerce.services.exception.DataBaseIntegrityViolationException;
 import com.swproject.dscommerce.services.exception.ResourceNotFoundException;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class ProductService {
@@ -49,15 +55,31 @@ public class ProductService {
 
   @Transactional(readOnly = false)
   public ProductDTO update(long id, ProductDTO dto) {
-    Product product = productRepository.getReferenceById(id);
-    copyDtoToEntity(dto, product);
-    product = productRepository.save(product);
-    return new ProductDTO(product);
+    try {
+      Product product = productRepository.getReferenceById(id);
+      copyDtoToEntity(dto, product);
+      product = productRepository.save(product);
+      return new ProductDTO(product);
+
+    } catch (EntityNotFoundException e) {
+      throw new ResourceNotFoundException("Recurso não encontrado: " + id);
+    }
   }
 
-  @Transactional(readOnly = false)
+  @Transactional(readOnly = false, propagation = Propagation.SUPPORTS)
   public void delete(Long id) {
-    productRepository.deleteById(id);
+
+    if (!productRepository.existsById(id)) {
+      throw new ResourceNotFoundException("Product not found: " + id);
+    }
+
+    try {
+      productRepository.deleteById(id);
+
+    } catch (DataIntegrityViolationException e) {
+      throw new DataBaseIntegrityViolationException(
+          "Cannot delete product with id " + id + " due to existing relationships.");
+    }
   }
 
   private void copyDtoToEntity(ProductDTO dto, Product product) {
